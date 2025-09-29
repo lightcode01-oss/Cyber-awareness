@@ -1,0 +1,2344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investor Immunity System</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-bg: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            --secondary-bg: rgba(15, 25, 45, 0.95);
+            --card-bg: rgba(20, 35, 60, 0.8);
+            --accent-color: #00d4ff;
+            --success-color: #00ff88;
+            --warning-color: #ffb800;
+            --danger-color: #ff4757;
+            --text-primary: #ffffff;
+            --text-secondary: #b8c6db;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        [data-theme="dark"] {
+            --primary-bg: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+            --secondary-bg: rgba(5, 10, 25, 0.95);
+            --card-bg: rgba(10, 15, 30, 0.9);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--primary-bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Navigation */
+        .navbar {
+            background: var(--secondary-bg);
+            backdrop-filter: blur(20px);
+            padding: 1rem 0;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.3s;
+            cursor: pointer;
+        }
+
+        .nav-links a:hover,
+        .nav-links a.active {
+            color: var(--accent-color);
+        }
+
+        .theme-toggle {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .theme-toggle:hover {
+            background: var(--accent-color);
+            color: #000;
+        }
+
+        /* Login Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 400px;
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        .btn {
+            background: var(--accent-color);
+            color: #000;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.3);
+        }
+
+        .btn-full {
+            width: 100%;
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-top: 80px;
+            padding: 2rem 0;
+        }
+
+        .section {
+            display: none;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Dashboard */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 1.5rem;
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .card-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .card-change {
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .positive {
+            color: var(--success-color);
+        }
+
+        .negative {
+            color: var(--danger-color);
+        }
+
+        .cyber-score {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .score-circle {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: conic-gradient(var(--accent-color) 0deg, var(--accent-color) 234deg, var(--border-color) 234deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            position: relative;
+        }
+
+        .score-circle::before {
+            content: '';
+            width: 120px;
+            height: 120px;
+            background: var(--card-bg);
+            border-radius: 50%;
+            position: absolute;
+        }
+
+        .score-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            z-index: 1;
+        }
+
+        .risk-assessment {
+            margin-top: 1.5rem;
+        }
+
+        .risk-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .risk-item:last-child {
+            border-bottom: none;
+        }
+
+        .risk-bar {
+            width: 100px;
+            height: 8px;
+            background: var(--border-color);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .risk-fill {
+            height: 100%;
+            background: var(--success-color);
+            transition: width 0.3s;
+        }
+
+        /* Stock Section */
+        .stock-selector {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .stock-btn {
+            padding: 0.5rem 1rem;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .stock-btn.active {
+            background: var(--accent-color);
+            color: #000;
+            border-color: var(--accent-color);
+        }
+
+        .chart-container {
+    height: 100%;
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+
+        .analysis-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 600px;
+            z-index: 2000;
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            display: none;
+        }
+
+        .analysis-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1999;
+            display: none;
+        }
+
+        .loading-spinner {
+            border: 3px solid var(--border-color);
+            border-top: 3px solid var(--accent-color);
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 1rem auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* AI Guardian */
+        .ai-guardian-input {
+            width: 100%;
+            min-height: 150px;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: inherit;
+            resize: vertical;
+        }
+
+        .ai-result {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: var(--secondary-bg);
+            border-radius: 8px;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        /* Fraud Sandbox */
+        .sandbox-games {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .game-card {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid var(--border-color);
+        }
+
+        .game-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-color);
+        }
+
+        .game-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        /* DNA Profiling */
+        .dna-quiz {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .question-card {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 16px;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .question-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .option-btn {
+            padding: 1rem;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+        }
+
+        .option-btn:hover {
+            border-color: var(--accent-color);
+            background: rgba(0, 212, 255, 0.1);
+        }
+
+        .option-btn.selected {
+            background: var(--accent-color);
+            color: #000;
+            border-color: var(--accent-color);
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stock-selector {
+                justify-content: center;
+            }
+
+            .question-options {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                width: 95%;
+                padding: 1.5rem;
+            }
+
+            .card-value {
+                font-size: 1.5rem;
+            }
+
+            .score-circle {
+                width: 120px;
+                height: 120px;
+            }
+
+            .score-circle::before {
+                width: 90px;
+                height: 90px;
+            }
+
+            .score-value {
+                font-size: 2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 10px;
+            }
+
+            .card {
+                padding: 1rem;
+            }
+
+            .chart-container {
+                height: 300px;
+            }
+        }
+
+        /* Mobile Navigation */
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--secondary-bg);
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+            z-index: 1000;
+        }
+
+        .mobile-nav-items {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .mobile-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .mobile-nav-item.active {
+            color: var(--accent-color);
+        }
+
+        @media (max-width: 768px) {
+            .mobile-nav {
+                display: block;
+            }
+
+            .main-content {
+                margin-bottom: 80px;
+            }
+        }
+
+        /* User Dropdown */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-btn {
+    background: var(--accent-color);
+    color: #000;
+    border: none;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.dropdown-btn:hover {
+    background: #00bcd4;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    margin-top: 0.5rem;
+    background: var(--secondary-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    min-width: 160px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    z-index: 3000;
+}
+
+.dropdown-content a {
+    display: block;
+    padding: 0.7rem 1rem;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.95rem;
+    transition: background 0.3s, color 0.3s;
+}
+
+.dropdown-content a:hover {
+    background: rgba(0,212,255,0.1);
+    color: var(--accent-color);
+}
+
+/* Glow effect for Analytical Report */
+.highlight-glow {
+    box-shadow: 0 0 25px var(--accent-color);
+    transition: box-shadow 0.6s ease-in-out;
+}
+
+.score-chart-container {
+    position: relative;
+    width: 180px;
+    height: 180px;
+    margin: 0 auto 1rem;
+}
+
+.score-chart-container canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.score-value {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    text-align: center;
+}
+
+.score-chart-container {
+    position: relative;
+    width: 180px;
+    height: 180px;
+    margin: 0 auto 1rem;
+}
+
+.score-chart-container canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.score-value {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.portfolio-metrics canvas {
+    position: relative;
+    z-index: 2;
+}
+
+.portfolio-metrics {
+    position: relative;
+    overflow: hidden;
+}
+
+.portfolio-metrics .chart-container {
+    height: 250px;
+    margin-top: 1.5rem;
+    position: relative;
+    z-index: 1;
+}
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  background: #000; /* or your navbar background */
+}
+
+.logo img {
+  height: 60px;   /* adjust to fit */
+  width: auto;
+  display: block;
+}
+
+footer {
+  background: #000; /* Dark footer */
+  color: #00ff88;
+  padding: 0.5rem 0;
+  overflow: hidden;
+  font-family: monospace;
+}
+
+.ticker-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ticker-line {
+  display: inline-block;
+  white-space: nowrap;
+  animation: ticker 20s linear infinite;
+  font-size: 0.9rem;
+}
+
+.ticker-line span {
+  margin-right: 2rem; /* spacing between items */
+}
+
+.ticker-2 {
+  animation-duration: 25s; /* different speed for 2nd line */
+  color: #00d4ff;
+}
+
+@keyframes ticker {
+  0%   { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-content">
+                <div class="logo">
+                    <img src="pic-1.jpg" alt="Immunivest logo">
+                    <span>Immunivest
+                        <br> <span style="font-style: italic; font-size:0.75rem; font-weight:500;">INVEST IN SAFETY , INVEST IN GROWTH</span></br>
+                    </span>
+                    
+                </div>
+                <ul class="nav-links">
+                    <li><a href="#" onclick="showSection('dashboard')" class="active">Dashboard</a></li>
+                    <li><a href="#" onclick="showSection('training')">Training Modules</a></li>
+                    <li><a href="#" onclick="showSection('dna-profiling')">DNA Profiling</a></li>
+                    <li><a href="#" onclick="showSection('fraud-sandbox')">Fraud Sandbox</a></li>
+                    <li><a href="#" onclick="showSection('ai-guardian')">AI Guardian</a></li>
+                    <li><a href="#" onclick="showSection('stocks')">Stocks</a></li>
+                </ul>
+                <div id="authArea" style="display:flex; align-items:center; gap:1rem;">
+    <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+    <button class="btn" onclick="showLogin()">Login</button>
+</div>
+
+
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Navigation -->
+    <div class="mobile-nav">
+        <div class="mobile-nav-items">
+            <div class="mobile-nav-item active" onclick="showSection('dashboard')">
+                <span>📊</span>
+                <span style="font-size: 0.8rem;">Dashboard</span>
+            </div>
+            <div class="mobile-nav-item" onclick="showSection('training')">
+                <span>📚</span>
+                <span style="font-size: 0.8rem;">Training Modules</span>
+            </div>
+>
+
+            <div class="mobile-nav-item" onclick="showSection('dna-profiling')">
+                <span>🧬</span>
+                <span style="font-size: 0.8rem;">DNA</span>
+            </div>
+            <div class="mobile-nav-item" onclick="showSection('fraud-sandbox')">
+                <span>🎮</span>
+                <span style="font-size: 0.8rem;">Sandbox</span>
+            </div>
+            <div class="mobile-nav-item" onclick="showSection('ai-guardian')">
+                <span>🤖</span>
+                <span style="font-size: 0.8rem;">AI Guardian</span>
+            </div>
+            <div class="mobile-nav-item" onclick="showSection('stocks')">
+                <span>📈</span>
+                <span style="font-size: 0.8rem;">Stocks</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login/Register Modal -->
+<div class="modal" id="loginModal">
+    <div class="modal-content">
+        <h2 id="modalTitle" style="margin-bottom: 1.5rem; text-align: center;">Login</h2>
+
+        <!-- Login Form -->
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label for="loginUsername">Username</label>
+                <input type="text" id="loginUsername" required>
+            </div>
+            <div class="form-group">
+                <label for="loginPassword">Password</label>
+                <input type="password" id="loginPassword" required>
+            </div>
+            <button type="submit" class="btn btn-full">Login</button>
+        </form>
+
+        <!-- Register Form -->
+        <form id="registerForm" onsubmit="handleRegister(event)" style="display: none;">
+            <div class="form-group">
+                <label for="regUsername">Username</label>
+                <input type="text" id="regUsername" required>
+            </div>
+            <div class="form-group">
+                <label for="regEmail">Email</label>
+                <input type="email" id="regEmail" required>
+            </div>
+            <div class="form-group">
+                <label for="regPassword">Password</label>
+                <input type="password" id="regPassword" required>
+            </div>
+            <button type="submit" class="btn btn-full">Register</button>
+        </form>
+
+        <div style="text-align:center; margin-top:1rem;">
+            <a href="#" onclick="toggleForms()" style="color: var(--accent-color);">Don’t have an account? Register</a>
+        </div>
+
+        <button type="button" class="btn btn-full" onclick="hideLogin()" style="background: transparent; color: var(--text-secondary); margin-top: 1rem;">Cancel</button>
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal" id="settingsModal">
+    <div class="modal-content">
+        <h2 style="margin-bottom: 1.5rem; text-align:center;">Profile Settings</h2>
+        <form onsubmit="updateProfile(event)">
+            <div class="form-group">
+                <label for="profileUsername">Username</label>
+                <input type="text" id="profileUsername" required>
+            </div>
+            <div class="form-group">
+                <label for="profileEmail">Email</label>
+                <input type="email" id="profileEmail" required>
+            </div>
+            <button type="submit" class="btn btn-full">Save Changes</button>
+            <button type="button" class="btn btn-full" onclick="hideSettings()" style="background: transparent; color: var(--text-secondary); margin-top: 0.5rem;">Cancel</button>
+        </form>
+    </div>
+</div>
+
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="section active">
+                <h1 style="margin-bottom: 2rem; text-align: center;">Investment Dashboard</h1>
+
+                <div class="dashboard-grid">
+                    <!-- Portfolio Value -->
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title">Portfolio Value 💼</span>
+                        </div>
+                        <div class="card-value" id="portfolioValue">$12,500</div>
+                    </div>
+
+                    <!-- YTD Growth -->
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title">YTD Growth 📈</span>
+                        </div>
+                        <div class="card-value positive" id="ytdGrowth">+12.5%</div>
+                    </div>
+
+                    <!-- Safe Investments -->
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-title">Safe Investments</span>
+                        </div>
+                        <div class="card-value" id="safeInvestments">10/10</div>
+                    </div>
+
+                    <!-- Cyber Score -->
+                    <div class="card cyber-score">
+                        <h3 style="margin-bottom: 1rem;">Investor DNA Profile</h3>
+                        <div class="score-circle">
+                        <canvas id="score-circle"></canvas>
+                        <div id="cyberScore" class="score-value">65</div>
+                    </div>
+
+
+
+
+                        <p style="color: var(--text-secondary);">Cyber Score</p>
+
+                        <div class="risk-assessment">
+                            <h4 style="margin-bottom: 1rem;">Risk Assessment</h4>
+                            <div class="risk-item">
+                                <span>🎣 Phishing Awareness</span>
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <div class="risk-bar">
+                                        <div class="risk-fill" style="width: 85%;"></div>
+                                    </div>
+                                    <span style="font-size: 0.9rem; color: var(--success-color);">85%</span>
+                                </div>
+                            </div>
+                            <div class="risk-item">
+                                <span>📊 Market Analysis</span>
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <div class="risk-bar">
+                                        <div class="risk-fill" style="width: 75%;"></div>
+                                    </div>
+                                    <span style="font-size: 0.9rem; color: var(--success-color);">75%</span>
+                                </div>
+                            </div>
+                            <div class="risk-item">
+                                <span>🛡️ Fraud Detection</span>
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <div class="risk-bar">
+                                        <div class="risk-fill" style="width: 70%;"></div>
+                                    </div>
+                                    <span style="font-size: 0.9rem; color: var(--success-color);">70%</span>
+                                </div>
+                            </div>
+                            <div class="risk-item">
+                                <span>💰 Portfolio Safety</span>
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <div class="risk-bar">
+                                        <div class="risk-fill" style="width: 65%;"></div>
+                                    </div>
+                                    <span style="font-size: 0.9rem; color: var(--warning-color);">65%</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 1.5rem; padding: 1rem; background: var(--secondary-bg); border-radius: 8px;">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                                <span>🎯</span>
+                                <strong>Vigilant Investor</strong>
+                            </div>
+                            <p id="progressPoints" style="font-size: 0.9rem; color: var(--text-secondary);">
+                                    Progress to next level: 35 points
+                            </p>
+
+                        </div>
+                    </div>
+                    <!-- Portfolio Metrics (side by side) -->
+                <div class="card cyber-score" >
+                    <h3 style="margin-bottom:1rem;">📊 Portfolio Metrics</h3>
+                <p style="color:var(--text-secondary); font-size:0.9rem;">Live Status</p>
+
+                <!-- Written Digits (keep as before) -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-top:1rem;">
+                    <div>
+                        <h2 style="color:var(--success-color);" id="metricDiversification">72%</h2>
+                        <p style="color:var(--text-secondary); font-size:0.85rem;">Diversification</p>
+                    </div>
+                    <div>
+                        <h2 style="color:var(--warning-color);" id="metricVolatility">65%</h2>
+                        <p style="color:var(--text-secondary); font-size:0.85rem;">Volatility</p>
+                    </div>
+                    <div>
+                        <h2 style="color:var(--accent-color);" id="metricLiquidity">89%</h2>
+                        <p style="color:var(--text-secondary); font-size:0.85rem;">Liquidity</p>
+                    </div>
+                    <div>
+                        <h2 style="color:var(--danger-color);" id="metricRisk">35%</h2>
+                        <p style="color:var(--text-secondary); font-size:0.85rem;">Risk Index</p>
+                    </div>
+                </div>
+
+                <!-- Line Graph -->
+                <div class="card cyber-score" style="position: relative; overflow: hidden; margin-top:2.5rem;">
+                    <canvas id="portfolioMetricsChart"></canvas>
+                </div>
+            </div>
+            <div class="card cyber-score" >
+                <h3>📝 Learning Path: Risk Management</h3>
+                
+                <ul style="margin-top:1rem; color:var(--text-secondar); font-size:0.9rem;">
+                    <li>Module 1: Understanding Risk</li>
+                    <li>Module 2: Analyzing Volatility</li>
+                    <li>Module 3: Diversification Strategies</li>
+                    <li>Module 4: Advanced Market Strategies</li>
+                </ul>
+                </div>
+                </div>
+                </div>
+                            
+
+                            
+        </div>
+
+                <!-- Analytical Report -->
+                <div class="card" id="analyticalReport" style="display: none;">
+                    <h3 style="margin-bottom: 1rem;">📊 Analytical Report</h3>
+                    <div id="analysisContent">
+                        <div class="loading-spinner"></div>
+                        <p style="text-align: center; margin-top: 1rem;">Analyzing investment data...</p>
+                    </div>
+                </div>
+            </section>
+
+            
+
+
+            <!-- DNA Profiling Section -->
+            <section id="dna-profiling" class="section">
+                <h1 style="margin-bottom: 2rem; text-align: center;">🧬 Investor DNA Profiling</h1>
+
+                <div class="dna-quiz">
+                    <div id="quizContainer">
+                        <div class="question-card">
+                            <h3>Question 1 of 5</h3>
+                            <p style="margin: 1rem 0; font-size: 1.1rem;">How do you typically research investments?</p>
+                            <div class="question-options">
+                                <button class="option-btn" onclick="selectOption(this, 'thorough')">
+                                    📚 Thorough research using multiple sources
+                                </button>
+                                <button class="option-btn" onclick="selectOption(this, 'basic')">
+                                    📰 Basic research from news articles
+                                </button>
+                                <button class="option-btn" onclick="selectOption(this, 'social')">
+                                    💬 Social media recommendations
+                                </button>
+                                <button class="option-btn" onclick="selectOption(this, 'gut')">
+                                    🎲 Follow gut feeling
+                                </button>
+                            </div>
+                        </div>
+
+                        <div style="text-align: center; margin-top: 2rem;">
+                            <button class="btn" onclick="nextQuestion()">Next Question</button>
+                        </div>
+                    </div>
+
+                    <div id="resultsContainer" style="display: none;">
+                        <div class="card">
+                            <h2 style="text-align: center; margin-bottom: 2rem;">🎯 Your Investor DNA Profile</h2>
+                            <div style="text-align: center;">
+                                <div class="score-circle" style="margin-bottom: 2rem;">
+                                    <div class="score-value" id="finalScore">75</div>
+                                </div>
+                                <h3 style="margin-bottom: 1rem; color: var(--success-color);">Cautious Investor</h3>
+                                <p style="color: var(--text-secondary); margin-bottom: 2rem;">You have a balanced approach to investing with good awareness of potential risks.</p>
+
+                                <button class="btn" onclick="retakeQuiz()">Retake Assessment</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Training Modules Page -->
+            <section id="training" class="section" s;">
+            <h2 style="margin-bottom:1rem;">📘 Training Modules</h2>
+            <p style="color:var(--text-secondary); margin-bottom:2rem;">
+                Explore our interactive training resources including video tutorials, eBooks, and structured learning paths 
+                designed to improve your investment knowledge and fraud detection skills.
+            </p>
+
+            <div class="dashboard-grid">
+                <!-- Module 1 -->
+                <div class="card">
+                <h3>🎥 Video Tutorial: Stock Market Basics</h3>
+                <p style="margin-top:0.5rem; color:var(--text-secondary); font-size:0.9rem;">
+                    Learn the fundamentals of stock markets, how they function, and what every investor should know before starting.
+                </p>
+                <div style="margin-top:1rem;">
+                    <iframe width="100%" height="200" 
+                    src="https://www.youtube.com/embed/D7uvEt0OV8A" 
+                    title="Stock Basics Video" frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+                    </iframe>
+                </div>
+                </div>
+
+                <!-- Module 2 -->
+                <div class="card">
+                <h3>📖 Book: Investment Fundamentals</h3>
+                <p style="margin-top:1rem; color:var(--text-secondary); font-size:0.9rem;">
+                    A comprehensive eBook covering portfolio building, risk management, and investor psychology.
+                </p>
+                <a href="https://garrettgunderson.com/wp-content/uploads/2024/05/RichLifeInvestorCourseManual.pdf" 
+                    class="btn" style="margin-top:1rem; display:inline-block;">
+                    📥 Download Book
+                </a>
+                </div>
+
+                <!-- Module 3 -->
+                <div class="card">
+                <h3>📝 Learning Path: Risk Management</h3>
+                <ul style="margin-top:1rem; color:var(--text-secondary); font-size:0.9rem;">
+                    <li>Module 1: Understanding Risk</li>
+                    <li>Module 2: Analyzing Volatility</li>
+                    <li>Module 3: Diversification Strategies</li>
+                    <li>Module 4: Advanced Market Strategies</li>
+                </ul>
+                </div>
+
+                <!-- Module 4 -->
+                <div class="card">
+                <h3>🎧 Podcast: Fraud Prevention Insights</h3>
+                <p style="margin-top:1rem; color:var(--text-secondary); font-size:0.9rem;">
+                    Listen to experts discuss real-world fraud cases and how to stay protected as an investor.
+                </p>
+                <audio controls style="width:100%; margin-top:1rem;">
+                    <source src="assets/fraud-prevention.mp3" type="audio/mpeg">
+                    Your browser does not support the audio element.
+                </audio>
+                </div>
+            </div>
+            </section>
+
+
+            <!-- Fraud Sandbox Section -->
+            <section id="fraud-sandbox" class="section">
+                <h1 style="margin-bottom: 2rem; text-align: center;">🎮 Fraud Sandbox Training</h1>
+
+                <div class="sandbox-games">
+                    <div class="game-card" onclick="startGame('phishing')">
+                        <div class="game-icon">🎣</div>
+                        <h3>Phishing Detection</h3>
+                        <p style="margin-top: 0.5rem; color: var(--text-secondary);">Learn to identify fake emails and websites</p>
+                    </div>
+
+                    <div class="game-card" onclick="startGame('crypto')">
+                        <div class="game-icon">₿</div>
+                        <h3>Crypto Scam Detection</h3>
+                        <p style="margin-top: 0.5rem; color: var(--text-secondary);">Identify pump-and-dump schemes</p>
+                    </div>
+
+                    <div class="game-card" onclick="startGame('calls')">
+                        <div class="game-icon">📞</div>
+                        <h3>Fake Broker Calls</h3>
+                        <p style="margin-top: 0.5rem; color: var(--text-secondary);">Recognize social engineering tactics</p>
+                    </div>
+
+                    <div class="game-card" onclick="startGame('social')">
+                        <div class="game-icon">🎭</div>
+                        <h3>Social Engineering</h3>
+                        <p style="margin-top: 0.5rem; color: var(--text-secondary);">Detect manipulation tactics</p>
+                    </div>
+                </div>
+
+                <div class="card" id="gameArea" style="display: none;">
+                    <h3 id="gameTitle">Phishing Detection Training</h3>
+                    <div id="gameContent">
+                        <!-- Game content will be loaded here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- AI Guardian Section -->
+            <section id="ai-guardian" class="section">
+                <h1 style="margin-bottom: 2rem; text-align: center;">🤖 AI Guardian</h1>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 1rem;">Analyze Suspicious Messages</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+                        Paste any suspicious call transcript, SMS, WhatsApp message, or email below for real-time analysis.
+                    </p>
+
+                    <textarea class="ai-guardian-input" id="messageInput" 
+                        placeholder="Paste your suspicious message here..."></textarea>
+
+                    <div style="text-align: center; margin-top: 1rem;">
+                        <button class="btn" onclick="analyzeMessage()">🔍 Analyze Message</button>
+                    </div>
+
+                    <div id="aiResult" class="ai-result" style="display: none;">
+                        <!-- Analysis results will appear here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Stocks Section -->
+            <section id="stocks" class="section">
+                <h1 style="margin-bottom: 2rem; text-align: center;">📈 Live Market Data</h1>
+
+                <div class="stock-selector">
+                    <button class="stock-btn active" onclick="selectStock('AAPL', this)">AAPL</button>
+                    <button class="stock-btn" onclick="selectStock('GOOGL', this)">GOOGL</button>
+                    <button class="stock-btn" onclick="selectStock('MSFT', this)">MSFT</button>
+                    <button class="stock-btn" onclick="selectStock('TAMO', this)">TAMO</button>
+                    <button class="stock-btn" onclick="selectStock('AMZN', this)">AMZN</button>
+                    <button class="stock-btn" onclick="selectStock('BITS', this)">BITS</button>
+                    <button class="stock-btn" onclick="selectStock('ETH', this)">ETH</button>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 id="selectedStock">Apple Inc. (AAPL)</h3>
+                        <div>
+                            <span id="stockPrice" style="font-size: 1.5rem; font-weight: 700;">$175.32</span>
+                            <span id="stockChange" class="positive" style="margin-left: 0.5rem;">+2.41 (+1.39%)</span>
+                        </div>
+                    </div>
+
+                    <div class="chart-container">
+                        <canvas id="stockChart"></canvas>
+                    </div>
+
+                    <div style="text-align: center;">
+                        <button class="btn" onclick="startAnalysis()">🔍 Start Analysis</button>
+
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Analysis Popup -->
+    <div class="analysis-overlay" id="analysisOverlay"></div>
+    <div class="analysis-popup" id="analysisPopup">
+        <h2 style="margin-bottom: 1.5rem;">📊 Stock Analysis in Progress</h2>
+        <div class="loading-spinner"></div>
+        <p style="text-align: center; margin: 1rem 0;">Analyzing market data and generating insights...</p>
+        <div style="text-align: center; margin-top: 2rem;">
+            <button class="btn" onclick="closeAnalysis()">Close</button>
+        </div>
+    </div>
+
+    <footer>
+  <div class="ticker-container">
+    <div class="ticker-line ticker-1">
+      <span>📈 AAPL: 189.54 ▲ +1.23%</span>
+      <span>📉 TSLA: 245.67 ▼ -2.14%</span>
+      <span>📈 MSFT: 328.45 ▲ +0.78%</span>
+      <span>📉 AMZN: 132.90 ▼ -0.54%</span>
+      <span>📈 GOOGL: 142.18 ▲ +0.65%</span>
+    </div>
+
+    <div class="ticker-line ticker-2">
+      <span>📉 NVDA: 452.36 ▼ -1.28%</span>
+      <span>📈 META: 312.77 ▲ +0.92%</span>
+      <span>📉 NFLX: 402.13 ▼ -0.47%</span>
+      <span>📈 JPM: 154.12 ▲ +0.33%</span>
+      <span>📉 BTC-USD: 27,432 ▼ -0.84%</span>
+    </div>
+  </div>
+</footer>
+
+
+    <script>
+        // Global variables
+        let currentSection = 'dashboard';
+        let currentQuiz = 0;
+        let quizAnswers = [];
+        let stockChart = null;
+        let currentStock = 'AAPL';
+        let realTimeInterval = null;
+
+        // Stock data simulation
+        const stockData = {
+            'AAPL': { name: 'Apple Inc.', price: 175.32, change: 2.41, percent: 1.39 },
+            'GOOGL': { name: 'Alphabet Inc.', price: 142.56, change: -1.23, percent: -0.86 },
+            'MSFT': { name: 'Microsoft Corp.', price: 378.85, change: 4.67, percent: 1.25 },
+            'TAMO': { name: 'Tata Motors Ltd', price: 675.42, change: -3.21, percent: -1.28 },
+            'AMZN': { name: 'Amazon.com Inc.', price: 145.78, change: 2.89, percent: 2.02 },
+            'BITS': { name: 'BITCOIN', price: 112200.42, change: 2.34, percent: -1.23 },
+            'ETH': { name: 'ETHEREUM', price: 4130.54, change: -13.96, percent: -2.34 }
+        };
+
+        // Quiz questions
+        const quizQuestions = [
+            {
+                question: "How do you typically research investments?",
+                options: [
+                    { text: "📚 Thorough research using multiple sources", value: "thorough", score: 20 },
+                    { text: "📰 Basic research from news articles", value: "basic", score: 15 },
+                    { text: "💬 Social media recommendations", value: "social", score: 10 },
+                    { text: "🎲 Follow gut feeling", value: "gut", score: 5 }
+                ]
+            },
+            {
+                question: "How do you react to investment losses?",
+                options: [
+                    { text: "📊 Analyze what went wrong and learn", value: "analyze", score: 20 },
+                    { text: "⏳ Hold and wait for recovery", value: "hold", score: 15 },
+                    { text: "😰 Panic and sell immediately", value: "panic", score: 5 },
+                    { text: "🎲 Double down to recover losses", value: "double", score: 8 }
+                ]
+            },
+            {
+                question: "Which statement best describes your approach to online security?",
+                options: [
+                    { text: "🔐 Always verify before clicking links", value: "verify", score: 20 },
+                    { text: "🤔 Sometimes check suspicious messages", value: "sometimes", score: 15 },
+                    { text: "😐 Don't think about it much", value: "neutral", score: 10 },
+                    { text: "🤷 Click first, worry later", value: "careless", score: 5 }
+                ]
+            },
+            {
+                question: "How do you handle unsolicited investment advice?",
+                options: [
+                    { text: "🔍 Research thoroughly before considering", value: "research", score: 20 },
+                    { text: "👂 Listen but remain skeptical", value: "skeptical", score: 15 },
+                    { text: "💭 Consider if it sounds good", value: "consider", score: 10 },
+                    { text: "✅ Trust if they seem knowledgeable", value: "trust", score: 5 }
+                ]
+            },
+            {
+                question: "What's your approach to diversification?",
+                options: [
+                    { text: "🎯 Well-diversified across asset classes", value: "diversified", score: 20 },
+                    { text: "📊 Some diversification within stocks", value: "some", score: 15 },
+                    { text: "💼 Focus on a few promising investments", value: "focused", score: 10 },
+                    { text: "🚀 All-in on best opportunities", value: "allin", score: 5 }
+                ]
+            }
+        ];
+
+        // Initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeStockChart();
+            startRealTimeUpdates();
+            updateDashboardData();
+            initPortfolioMetricsChart();
+
+            // 🔄 update metrics every 5s
+    setInterval(updatePortfolioMetrics, 1000);
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+    initializeStockChart();
+    startRealTimeUpdates();
+    updateDashboardData();
+    initPortfolioMetricsChart();
+    initCyberScoreChart(); // start with base score
+});
+
+
+        // Theme toggle
+        function toggleTheme() {
+            const body = document.body;
+            const currentTheme = body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            body.setAttribute('data-theme', newTheme);
+
+            const toggleBtn = document.querySelector('.theme-toggle');
+            toggleBtn.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+        }
+
+        // Section navigation
+        function showSection(sectionName, event) {
+    // Hide all sections
+    document.querySelectorAll('.section').forEach(section => {
+        section.classList.remove('active');
+    });
+
+    // Show selected section
+    document.getElementById(sectionName).classList.add('active');
+
+    // Update nav highlight
+    document.querySelectorAll('.nav-links a, .mobile-nav-item').forEach(link => {
+        link.classList.remove('active');
+    });
+
+    if (event) event.target.classList.add('active');
+
+    currentSection = sectionName;
+}
+
+        // Login functionality
+        function showLogin() {
+            document.getElementById('loginModal').style.display = 'block';
+        }
+
+        function hideLogin() {
+            document.getElementById('loginModal').style.display = 'none';
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            // Simple validation (no database for now)
+            if (username && password) {
+                alert('Login successful! Welcome ' + username);
+                hideLogin();
+                // You can add more functionality here
+            }
+        }
+
+        // Stock functionality
+        function selectStock(symbol, button) {
+            // Update active button
+            document.querySelectorAll('.stock-btn').forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+
+            currentStock = symbol;
+            const stock = stockData[symbol];
+
+            // Update stock info
+            document.getElementById('selectedStock').textContent = `${stock.name} (${symbol})`;
+            document.getElementById('stockPrice').textContent = `$${stock.price}`;
+
+            const changeElement = document.getElementById('stockChange');
+            const changeClass = stock.change > 0 ? 'positive' : 'negative';
+            const changeSign = stock.change > 0 ? '+' : '';
+
+            changeElement.textContent = `${changeSign}${stock.change} (${changeSign}${stock.percent}%)`;
+            changeElement.className = changeClass;
+
+            // Update chart
+            updateStockChart();
+        }
+
+        function initializeStockChart() {
+            const ctx = document.getElementById('stockChart').getContext('2d');
+
+            // Generate sample data
+            const labels = [];
+            const data = [];
+            const now = new Date();
+
+            for (let i = 30; i >= 0; i--) {
+                const time = new Date(now - i * 60000); // 1 minute intervals
+                labels.push(time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));
+
+                // Generate realistic stock price movement
+                const basePrice = stockData[currentStock].price;
+                const randomChange = (Math.random() - 0.5) * 10;
+                data.push(basePrice + randomChange);
+            }
+
+            stockChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: currentStock,
+                        data: data,
+                        borderColor: '#00d4ff',
+                        backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            display: true,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#b8c6db',
+                                maxTicksLimit: 8
+                            }
+                        },
+                        y: {
+                            display: true,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#b8c6db'
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    }
+                }
+            });
+        }
+
+        function updateStockChart() {
+            if (!stockChart) return;
+
+            const data = stockChart.data.datasets[0].data;
+            const labels = stockChart.data.labels;
+
+            // Add new data point
+            const now = new Date();
+            const newLabel = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            const basePrice = stockData[currentStock].price;
+            const randomChange = (Math.random() - 0.5) * 5;
+            const newPrice = basePrice + randomChange;
+
+            // Keep only last 30 data points
+            if (data.length >= 30) {
+                data.shift();
+                labels.shift();
+            }
+
+            data.push(newPrice);
+            labels.push(newLabel);
+
+            stockChart.update('none');
+        }
+
+        function startRealTimeUpdates() {
+            if (realTimeInterval) clearInterval(realTimeInterval);
+
+            realTimeInterval = setInterval(() => {
+                if (currentSection === 'stocks') {
+                    updateStockChart();
+
+                    // Simulate price updates
+                    const stock = stockData[currentStock];
+                    const priceChange = (Math.random() - 0.5) * 2;
+                    stock.price += priceChange;
+                    stock.change += priceChange;
+                    stock.percent = (stock.change / (stock.price - stock.change)) * 100;
+
+                    // Update display
+                    document.getElementById('stockPrice').textContent = `$${stock.price.toFixed(2)}`;
+
+                    const changeElement = document.getElementById('stockChange');
+                    const changeClass = stock.change > 0 ? 'positive' : 'negative';
+                    const changeSign = stock.change > 0 ? '+' : '';
+
+                    changeElement.textContent = `${changeSign}${stock.change.toFixed(2)} (${changeSign}${stock.percent.toFixed(2)}%)`;
+                    changeElement.className = changeClass;
+                }
+            }, 5000); // Update every 5 seconds
+        }
+
+function startAnalysis() {
+    document.getElementById('analysisOverlay').style.display = 'block';
+    document.getElementById('analysisPopup').style.display = 'block';
+
+    // Simulate analysis completion
+    setTimeout(() => {
+        closeAnalysis();
+        showAnalyticalReport();
+
+        updateCyberScore(cyberScore);
+
+
+        // ✅ Redirect to Dashboard
+        showSection('dashboard');
+
+        // ✅ Highlight Dashboard nav link
+        document.querySelectorAll('.nav-links a').forEach(link => link.classList.remove('active'));
+        document.querySelector('.nav-links a[onclick*="dashboard"]').classList.add('active');
+
+        // ✅ Scroll smoothly to Analytical Report
+        const reportCard = document.getElementById('analyticalReport');
+        reportCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // Extra scroll offset (scroll further down to fully show report)
+        setTimeout(() => {
+            window.scrollBy({ top: 400, behavior: 'smooth' });
+
+            // Apply glow effect
+            reportCard.classList.add('highlight-glow');
+
+            // Remove glow after 2.5s
+            setTimeout(() => {
+                reportCard.classList.remove('highlight-glow');
+            }, 2500);
+
+        }, 800);
+
+    }, 3000);
+}
+
+
+        
+
+        function closeAnalysis() {
+            document.getElementById('analysisOverlay').style.display = 'none';
+            document.getElementById('analysisPopup').style.display = 'none';
+        }
+
+        function showAnalyticalReport() {
+    const reportCard = document.getElementById('analyticalReport');
+    const analysisContent = document.getElementById('analysisContent');
+
+    
+
+    // Simulate dynamic values
+    const riskLevels = ["Low", "Moderate", "High"];
+    const risk = riskLevels[Math.floor(Math.random() * riskLevels.length)];
+    const volatility = riskLevels[Math.floor(Math.random() * riskLevels.length)];
+    const safetyRating = ["A+", "B", "C"][Math.floor(Math.random() * 4)];
+
+    
+
+    // Cyber score between 50–95
+    const cyberScore = Math.floor(50 + Math.random() * 45);
+    document.getElementById('cyberScore').textContent = cyberScore;
+
+    // Update risk bars dynamically
+    const phishing = Math.floor(60 + Math.random() * 40);
+    const market = Math.floor(60 + Math.random() * 40);
+    const fraud = Math.floor(60 + Math.random() * 40);
+    const portfolio = Math.floor(50 + Math.random() * 40);
+
+    const riskItems = document.querySelectorAll('.risk-item');
+    riskItems[0].querySelector('.risk-fill').style.width = phishing + "%";
+    riskItems[0].querySelector('span:last-child').textContent = phishing + "%";
+
+    riskItems[1].querySelector('.risk-fill').style.width = market + "%";
+    riskItems[1].querySelector('span:last-child').textContent = market + "%";
+
+    riskItems[2].querySelector('.risk-fill').style.width = fraud + "%";
+    riskItems[2].querySelector('span:last-child').textContent = fraud + "%";
+
+    riskItems[3].querySelector('.risk-fill').style.width = portfolio + "%";
+    riskItems[3].querySelector('span:last-child').textContent = portfolio + "%";
+
+    // Update investor type dynamically
+    let investorType, investorColor;
+    if (cyberScore >= 85) {
+        investorType = "Expert Investor";
+        investorColor = "var(--success-color)";
+    } else if (cyberScore >= 70) {
+        investorType = "Vigilant Investor";
+        investorColor = "var(--accent-color)";
+    } else if (cyberScore >= 55) {
+        investorType = "Cautious Investor";
+        investorColor = "var(--warning-color)";
+    } else {
+        investorType = "Learning Investor";
+        investorColor = "var(--danger-color)";
+    }
+    document.querySelector(".cyber-score strong").textContent = investorType;
+    document.querySelector(".cyber-score strong").style.color = investorColor;
+
+    // ✅ Dynamic Progress to Next Level
+let progressPoints;
+if (cyberScore >= 85) {
+    progressPoints = 10;  // Expert Investor needs fewer points
+} else if (cyberScore >= 70) {
+    progressPoints = 25;  // Vigilant Investor
+} else if (cyberScore >= 55) {
+    progressPoints = 40;  // Cautious Investor
+} else {
+    progressPoints = 60;  // Learning Investor needs many more
+}
+
+// Update the progress text in Investor DNA Profile card
+document.querySelector(".cyber-score p").textContent =
+    `Progress to next level: ${progressPoints} points`;
+
+// Update the progress text correctly
+document.getElementById("progressPoints").textContent =
+    `Progress to next level: ${progressPoints} points`;
+
+
+
+// ✅ Dynamic Safe Investments update (based on stock risk & safety)
+let safeInvestments;
+if (safetyRating === "A+") {
+    safeInvestments = "10/10";
+} else if (safetyRating === "B") {
+    safeInvestments = "7/10";
+} else if (safetyRating === "C") {
+    safeInvestments = "4/10";
+} else {
+    safeInvestments = "0/10";
+}
+
+document.getElementById("safeInvestments").textContent = safeInvestments;
+
+
+    // Add timestamp
+    const now = new Date();
+    const dateTime = now.toLocaleString("en-IN", {
+        weekday: "short",
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+    });
+
+    // Update Analytical Report with dynamic values
+    analysisContent.innerHTML = `
+        <p style="color: var(--text-secondary); font-size:0.9rem; margin-bottom:0.5rem;">
+            Report generated on: <strong>${dateTime}</strong>
+        </p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+            <div style="text-align: center;">
+                <div style="font-size: 2rem; color: ${risk === "High" ? "var(--danger-color)" : "var(--success-color)"}; font-weight: 700;">${risk}</div>
+                <div style="color: var(--text-secondary);">Risk Level</div>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 2rem; color: ${volatility === "High" ? "var(--warning-color)" : "var(--success-color)"}; font-weight: 700;">${volatility}</div>
+                <div style="color: var(--text-secondary);">Volatility</div>
+            </div>
+            <div style="text-align: center;">
+                <div style="font-size: 2rem; color: var(--accent-color); font-weight: 700;">${safetyRating}</div>
+                <div style="color: var(--text-secondary);">Safety Rating</div>
+            </div>
+        </div>
+
+        <div style="background: var(--secondary-bg); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--accent-color);">
+            <h4 style="margin-bottom: 0.5rem;">🔍 Key Insights</h4>
+            <ul style="margin: 0; padding-left: 1.5rem; color: var(--text-secondary);">
+                <li>${currentStock} shows ${volatility.toLowerCase()} volatility in current session.</li>
+                <li>Overall cyber score recalculated at <strong>${cyberScore}</strong>.</li>
+                <li>Portfolio risk adjusted: Fraud detection ${fraud}% and Market Analysis ${market}%.</li>
+                <li>Recommended investor strategy: <strong style="color:${investorColor};">${investorType}</strong></li>
+            </ul>
+        </div>
+    `;
+
+    reportCard.style.display = 'block';
+    reportCard.classList.add("highlight-glow");
+
+    // Remove glow after 3s
+    setTimeout(() => {
+        reportCard.classList.remove("highlight-glow");
+    }, 3000);
+
+    // Scroll into view (more down so report fully visible)
+    setTimeout(() => {
+        reportCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        window.scrollBy({ top: 500, behavior: 'smooth' });
+    }, 500);
+}
+
+
+        function updateDashboardData() {
+            // Simulate real-time dashboard updates
+            const portfolioValue = 12500 + (Math.random() - 0.2) * 10;
+            const ytdGrowth = 12.5 + (Math.random() - 0.5) * 5;
+
+            document.getElementById('portfolioValue').textContent = `$${portfolioValue.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
+            document.getElementById('ytdGrowth').textContent = `+${ytdGrowth.toFixed(1)}%`;
+        }
+
+        // DNA Profiling functionality
+        function selectOption(button, value) {
+            // Remove previous selections
+            button.parentNode.querySelectorAll('.option-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+
+            // Add selection
+            button.classList.add('selected');
+
+            // Store answer
+            const questionIndex = currentQuiz;
+            const selectedOption = quizQuestions[questionIndex].options.find(opt => opt.value === value);
+            quizAnswers[questionIndex] = selectedOption;
+        }
+
+        function nextQuestion() {
+            if (currentQuiz < quizQuestions.length - 1) {
+                currentQuiz++;
+                showQuestion();
+            } else {
+                calculateResults();
+            }
+        }
+
+        function showQuestion() {
+            const container = document.getElementById('quizContainer');
+            const question = quizQuestions[currentQuiz];
+
+            container.innerHTML = `
+                <div class="question-card">
+                    <h3>Question ${currentQuiz + 1} of ${quizQuestions.length}</h3>
+                    <p style="margin: 1rem 0; font-size: 1.1rem;">${question.question}</p>
+                    <div class="question-options">
+                        ${question.options.map(option => 
+                            `<button class="option-btn" onclick="selectOption(this, '${option.value}')">
+                                ${option.text}
+                            </button>`
+                        ).join('')}
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin-top: 2rem;">
+                    <button class="btn" onclick="nextQuestion()">
+                        ${currentQuiz === quizQuestions.length - 1 ? 'Get Results' : 'Next Question'}
+                    </button>
+                </div>
+            `;
+        }
+
+        function calculateResults() {
+            const totalScore = quizAnswers.reduce((sum, answer) => sum + (answer?.score || 0), 0);
+            const finalScore = Math.round((totalScore / 100) * 100);
+
+            let category, description;
+            if (finalScore >= 80) {
+                category = "Expert Investor";
+                description = "You have excellent awareness of investment risks and security practices.";
+            } else if (finalScore >= 60) {
+                category = "Cautious Investor";
+                description = "You have a balanced approach to investing with good awareness of potential risks.";
+            } else if (finalScore >= 40) {
+                category = "Learning Investor";
+                description = "You're on the right track but should improve your security awareness.";
+            } else {
+                category = "Vulnerable Investor";
+                description = "Consider taking our fraud training courses to improve your investment security.";
+            }
+
+            // Update cyber score in dashboard
+            document.getElementById('cyberScore').textContent = finalScore;
+
+            // Show results
+            document.getElementById('quizContainer').style.display = 'none';
+            document.getElementById('resultsContainer').style.display = 'block';
+            document.getElementById('finalScore').textContent = finalScore;
+            document.querySelector('#resultsContainer h3').textContent = category;
+            document.querySelector('#resultsContainer p').textContent = description;
+        }
+
+        function retakeQuiz() {
+            currentQuiz = 0;
+            quizAnswers = [];
+            document.getElementById('quizContainer').style.display = 'block';
+            document.getElementById('resultsContainer').style.display = 'none';
+            showQuestion();
+        }
+
+        // AI Guardian functionality
+        function analyzeMessage() {
+            const message = document.getElementById('messageInput').value.trim();
+            if (!message) {
+                alert('Please enter a message to analyze.');
+                return;
+            }
+
+            const resultDiv = document.getElementById('aiResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <div class="loading-spinner"></div>
+                <p style="text-align: center;">Analyzing message...</p>
+            `;
+
+            // Simulate AI analysis
+            setTimeout(() => {
+                const riskLevel = Math.random() > 0.5 ? 'high' : 'low';
+                const riskColor = riskLevel === 'high' ? 'var(--danger-color)' : 'var(--success-color)';
+                const riskText = riskLevel === 'high' ? 'HIGH RISK' : 'LOW RISK';
+
+                resultDiv.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                        <div style="padding: 0.5rem 1rem; background: ${riskColor}; color: #000; border-radius: 8px; font-weight: 700;">
+                            ${riskText}
+                        </div>
+                        <div style="font-size: 1.5rem;">${riskLevel === 'high' ? '⚠️' : '✅'}</div>
+                    </div>
+
+                    <h4 style="margin-bottom: 1rem;">Analysis Results:</h4>
+
+                    <ul style="margin: 0; padding-left: 1.5rem; color: var(--text-secondary);">
+                        ${riskLevel === 'high' ? 
+                            `<li>Contains urgency tactics commonly used in scams</li>
+                            <li>Requests sensitive financial information</li>
+                            <li>Sender verification appears suspicious</li>
+                            <li><strong style="color: var(--danger-color);">Recommendation: Do not respond or provide any information</strong></li>` :
+                            `<li>No obvious scam indicators detected</li>
+                            <li>Sender appears legitimate</li>
+                            <li>Content seems reasonable and professional</li>
+                            <li><strong style="color: var(--success-color);">Recommendation: Appears safe, but always verify independently</strong></li>`
+                        }
+                    </ul>
+                `;
+            }, 2000);
+        }
+
+        // Fraud Sandbox functionality
+        function startGame(gameType) {
+            const gameArea = document.getElementById('gameArea');
+            const gameTitle = document.getElementById('gameTitle');
+            const gameContent = document.getElementById('gameContent');
+
+            const games = {
+                phishing: {
+                    title: "🎣 Phishing Detection Training",
+                    content: `
+                        <p style="margin-bottom: 1.5rem;">Learn to identify suspicious emails and messages. Look for these red flags:</p>
+                        <div style="background: var(--secondary-bg); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                            <h4>Email Scenario:</h4>
+                            <div style="background: #fff; color: #000; padding: 1rem; border-radius: 4px; margin-top: 0.5rem;">
+                                <strong>From:</strong> security@bankofindia-verify.com<br>
+                                <strong>Subject:</strong> URGENT: Your account will be suspended!<br><br>
+                                Dear Customer,<br>
+                                Your account has been compromised. Click here immediately to verify your credentials or your account will be suspended within 24 hours.
+                                <br><br>
+                                <button style="background: red; color: white; padding: 0.5rem 1rem; border: none;">VERIFY NOW</button>
+                            </div>
+                        </div>
+                        <p><strong>What's suspicious about this email?</strong></p>
+                        <div style="display: grid; gap: 0.5rem; margin-top: 1rem;">
+                            <div onclick="selectAnswer(this, true)" class="option-btn">Suspicious domain name (bankofindia-verify.com)</div>
+                            <div onclick="selectAnswer(this, true)" class="option-btn">Creates false urgency</div>
+                            <div onclick="selectAnswer(this, false)" class="option-btn">Has proper bank branding</div>
+                            <div onclick="selectAnswer(this, true)" class="option-btn">Generic greeting "Dear Customer"</div>
+                        </div>
+                    `
+                },
+                crypto: {
+                    title: "₿ Crypto Scam Detection",
+                    content: `
+                        <p style="margin-bottom: 1.5rem;">Identify pump-and-dump schemes and fake crypto platforms:</p>
+                        <div style="background: var(--secondary-bg); padding: 1rem; border-radius: 8px;">
+                            <h4>Social Media Post:</h4>
+                            <p style="font-style: italic; margin-top: 0.5rem;">"🚀🚀🚀 MOONSHOT ALERT! 🚀🚀🚀<br>
+                            New crypto $FAKE is going 1000X tomorrow! Get in NOW before it's too late!<br>
+                            My insider friend told me whales are buying MASSIVE amounts!<br>
+                            This is NOT financial advice 😉<br>
+                            DM me for the link to buy!"</p>
+                        </div>
+                        <div style="text-align: center; margin-top: 1rem;">
+                            <button class="btn" onclick="showGameResult('crypto', 'This is a classic pump-and-dump scam! Red flags: unrealistic promises, urgency tactics, insider claims, and suspicious contact methods.')">Analyze This Post</button>
+                        </div>
+                    `
+                },
+                calls: {
+                    title: "📞 Fake Broker Calls",
+                    content: `
+                        <p style="margin-bottom: 1.5rem;">Learn to recognize social engineering tactics in phone calls:</p>
+                        <div style="background: var(--secondary-bg); padding: 1rem; border-radius: 8px;">
+                            <h4>Call Scenario:</h4>
+                            <p style="font-style: italic;">"Hello, this is John from Premium Investment Services. I have exclusive information about a stock that's about to skyrocket 500%. But this opportunity is only available for the next hour. I just need your bank details to get you set up immediately. This is completely risk-free and guaranteed!"</p>
+                        </div>
+                        <div style="text-align: center; margin-top: 1rem;">
+                            <button class="btn" onclick="showGameResult('calls', 'Major red flags: unsolicited call, unrealistic promises, artificial urgency, requests bank details, claims of guarantee. Legitimate brokers never operate this way!')">Identify Red Flags</button>
+                        </div>
+                    `
+                },
+                social: {
+                    title: "🎭 Social Engineering",
+                    content: `
+                        <p style="margin-bottom: 1.5rem;">Detect manipulation tactics and impersonation attempts:</p>
+                        <div style="background: var(--secondary-bg); padding: 1rem; border-radius: 8px;">
+                            <h4>WhatsApp Message:</h4>
+                            <p style="font-style: italic;">"Hi! This is Sarah from your bank. I'm calling from a new number because our systems are down. We've detected suspicious activity on your account. To protect your money, I need you to give me your OTP that we just sent to your phone. Don't worry, I'm here to help you!"</p>
+                        </div>
+                        <div style="text-align: center; margin-top: 1rem;">
+                            <button class="btn" onclick="showGameResult('social', 'Classic social engineering! Banks never ask for OTPs via unofficial channels. Scammer is impersonating authority, creating urgency, and using emotional manipulation.')">Analyze This Message</button>
+                        </div>
+                    `
+                }
+            };
+
+            gameTitle.textContent = games[gameType].title;
+            gameContent.innerHTML = games[gameType].content;
+            gameArea.style.display = 'block';
+            gameArea.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function selectAnswer(element, isCorrect) {
+            // Remove previous selections
+            element.parentNode.querySelectorAll('.option-btn').forEach(btn => {
+                btn.classList.remove('selected');
+                btn.style.background = 'transparent';
+            });
+
+            // Show result
+            if (isCorrect) {
+                element.style.background = 'var(--success-color)';
+                element.style.color = '#000';
+            } else {
+                element.style.background = 'var(--danger-color)';
+                element.style.color = '#fff';
+            }
+
+            element.classList.add('selected');
+        }
+
+        function showGameResult(gameType, explanation) {
+            const gameContent = document.getElementById('gameContent');
+            gameContent.innerHTML += `
+                <div style="background: var(--success-color); color: #000; padding: 1rem; border-radius: 8px; margin-top: 1rem;">
+                    <h4>🎯 Analysis Complete!</h4>
+                    <p style="margin-top: 0.5rem;">${explanation}</p>
+                </div>
+            `;
+        }
+
+        // Mobile responsive adjustments
+        window.addEventListener('resize', function() {
+            if (stockChart) {
+                stockChart.resize();
+            }
+        });
+
+        // Click outside modal to close
+        window.addEventListener('click', function(event) {
+            const loginModal = document.getElementById('loginModal');
+            if (event.target === loginModal) {
+                hideLogin();
+            }
+
+            const analysisOverlay = document.getElementById('analysisOverlay');
+            if (event.target === analysisOverlay) {
+                closeAnalysis();
+            }
+        });
+
+        let currentUser = null;
+
+// Toggle Login/Register forms
+function toggleForms() {
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    const modalTitle = document.getElementById('modalTitle');
+    const link = event.target;
+
+    if (loginForm.style.display === "none") {
+        loginForm.style.display = "block";
+        registerForm.style.display = "none";
+        modalTitle.textContent = "Login";
+        link.textContent = "Don’t have an account? Register";
+    } else {
+        loginForm.style.display = "none";
+        registerForm.style.display = "block";
+        modalTitle.textContent = "Register";
+        link.textContent = "Already have an account? Login";
+    }
+}
+
+// Handle Registration
+function handleRegister(event) {
+    event.preventDefault();
+    const username = document.getElementById('regUsername').value;
+    const email = document.getElementById('regEmail').value;
+    const password = document.getElementById('regPassword').value;
+
+    if (username && email && password) {
+        localStorage.setItem('user', JSON.stringify({ username, email }));
+        alert("Registration successful! Please login.");
+        toggleForms();
+    }
+}
+
+// Handle Login
+function handleLogin(event) {
+    event.preventDefault();
+    const username = document.getElementById('loginUsername').value;
+    const password = document.getElementById('loginPassword').value;
+
+    const savedUser = JSON.parse(localStorage.getItem('user'));
+    if (savedUser && savedUser.username === username) {
+        currentUser = savedUser;
+        hideLogin();
+        updateNavbar();
+    } else {
+        alert("Invalid credentials or user not registered.");
+    }
+}
+
+// Update Navbar After Login
+function updateNavbar() {
+    const authArea = document.getElementById('authArea');
+    authArea.innerHTML = `
+        <button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+        <div class="dropdown">
+            <button class="dropdown-btn">${currentUser.username} ⬇️</button>
+            <div class="dropdown-content">
+                <a href="#" onclick="showSettings()">⚙️ Settings</a>
+                <a href="#" onclick="logout()">🚪 Logout</a>
+            </div>
+        </div>
+    `;
+
+    // Dropdown toggle
+    const dropdownBtn = authArea.querySelector(".dropdown-btn");
+    const dropdownContent = authArea.querySelector(".dropdown-content");
+    dropdownBtn.addEventListener("click", () => {
+        dropdownContent.style.display =
+            dropdownContent.style.display === "block" ? "none" : "block";
+    });
+
+    // Close dropdown when clicking outside
+    window.addEventListener("click", (e) => {
+        if (!authArea.contains(e.target)) {
+            dropdownContent.style.display = "none";
+        }
+    });
+}
+
+
+// Settings Modal
+function showSettings() {
+    document.getElementById('settingsModal').style.display = 'block';
+    document.getElementById('profileUsername').value = currentUser.username;
+    document.getElementById('profileEmail').value = currentUser.email;
+}
+function hideSettings() {
+    document.getElementById('settingsModal').style.display = 'none';
+}
+function updateProfile(event) {
+    event.preventDefault();
+    currentUser.username = document.getElementById('profileUsername').value;
+    currentUser.email = document.getElementById('profileEmail').value;
+    localStorage.setItem('user', JSON.stringify(currentUser));
+    hideSettings();
+    updateNavbar();
+    alert("Profile updated successfully!");
+}
+
+// Logout
+function logout() {
+    currentUser = null;
+    localStorage.removeItem('user');
+    location.reload();
+}
+
+let cyberScoreChart = null;
+
+function initCyberScoreChart(initialScore = 65) {
+    const ctx = document.getElementById('cyberScoreChart').getContext('2d');
+
+    cyberScoreChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Score', 'Remaining'],
+            datasets: [{
+                data: [initialScore, 100 - initialScore],
+                backgroundColor: ['#00d4ff', 'rgba(255,255,255,0.1)'],
+                borderWidth: 0,
+                cutout: '70%'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: { legend: { display: false } }
+        }
+    });
+
+    // Show value in center
+    document.getElementById('cyberScore').textContent = initialScore;
+}
+
+function updateCyberScore(newScore) {
+    if (!cyberScoreChart) return;
+    cyberScoreChart.data.datasets[0].data = [newScore, 100 - newScore];
+    cyberScoreChart.update();
+
+    // Animate number
+    let current = parseInt(document.getElementById('cyberScore').textContent);
+    const step = newScore > current ? 1 : -1;
+    const interval = setInterval(() => {
+        current += step;
+        document.getElementById('cyberScore').textContent = current;
+        if (current === newScore) clearInterval(interval);
+    }, 20);
+}
+
+if (sectionName === "dashboard" && !cyberScoreChart) {
+    initCyberScoreChart(65);
+}
+
+let portfolioMetricsChart = null;
+
+function initPortfolioMetricsChart() {
+    const ctx = document.getElementById('portfolioMetricsChart').getContext('2d');
+
+    portfolioMetricsChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+            datasets: [
+                {
+                    label: "Diversification",
+                    data: [72, 74, 73, 75, 76, 78, 80],
+                    borderColor: '#00ff88',
+                    backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                },
+                {
+                    label: "Volatility",
+                    data: [65, 63, 66, 67, 68, 69, 70],
+                    borderColor: '#ff4757',
+                    backgroundColor: 'rgba(255, 71, 87, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                },
+                {
+                    label: "Liquidity",
+                    data: [89, 90, 88, 91, 92, 93, 94],
+                    borderColor: '#00d4ff',
+                    backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                },
+                {
+                    label: "Risk Index",
+                    data: [35, 36, 34, 37, 38, 39, 40],
+                    borderColor: '#ffb800',
+                    backgroundColor: 'rgba(255, 184, 0, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { labels: { color: '#b8c6db' } }
+            },
+            scales: {
+                x: { ticks: { color: '#b8c6db' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                y: { ticks: { color: '#b8c6db' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+            }
+        }
+    });
+}
+
+
+// ✅ Initialize when page loads
+document.addEventListener("DOMContentLoaded", () => {
+    initPortfolioMetricsChart();
+});
+
+function showPage(pageId) {
+    // Hide all pages
+    document.querySelectorAll('.page').forEach(sec => {
+        sec.style.display = "none";
+    });
+
+    // Show selected page
+    document.getElementById(pageId).style.display = "block";
+}
+
+function initPortfolioMetricsChart() {
+    const ctx = document.getElementById('portfolioMetricsChart').getContext('2d');
+
+    const labels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    const diversification = [70, 72, 74, 73, 75, 76, 78];
+    const volatility = [65, 64, 63, 66, 67, 68, 69];
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: "Diversification",
+                    data: diversification,
+                    borderColor: '#00ff88',
+                    backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                },
+                {
+                    label: "Volatility",
+                    data: volatility,
+                    borderColor: '#ff4757',
+                    backgroundColor: 'rgba(255, 71, 87, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: { color: '#b8c6db' }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { color: '#b8c6db' },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                },
+                y: {
+                    ticks: { color: '#b8c6db' },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                }
+            }
+        }
+    });
+}
+
+function updatePortfolioMetrics() {
+    if (!portfolioMetricsChart) return;
+
+    // Generate random-ish updates
+    const newDiversification = Math.floor(70 + Math.random() * 15);
+    const newVolatility = Math.floor(60 + Math.random() * 15);
+    const newLiquidity = Math.floor(85 + Math.random() * 10);
+    const newRisk = Math.floor(30 + Math.random() * 20);
+
+    // Update digits
+    document.getElementById('metricDiversification').textContent = newDiversification + "%";
+    document.getElementById('metricVolatility').textContent = newVolatility + "%";
+    document.getElementById('metricLiquidity').textContent = newLiquidity + "%";
+    document.getElementById('metricRisk').textContent = newRisk + "%";
+
+    // Push to chart
+    const labels = portfolioMetricsChart.data.labels;
+    labels.push("Now");
+    if (labels.length > 7) labels.shift();
+
+    portfolioMetricsChart.data.datasets[0].data.push(newDiversification);
+    portfolioMetricsChart.data.datasets[1].data.push(newVolatility);
+    portfolioMetricsChart.data.datasets[2].data.push(newLiquidity);
+    portfolioMetricsChart.data.datasets[3].data.push(newRisk);
+
+    // Keep only last 7 points
+    portfolioMetricsChart.data.datasets.forEach(ds => {
+        if (ds.data.length > 7) ds.data.shift();
+    });
+
+    portfolioMetricsChart.update();
+}
+
+
+    </script>
+    
+</body>
+</html>
